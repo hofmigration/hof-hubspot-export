@@ -1,0 +1,54 @@
+name: HubSpot export
+
+on:
+  workflow_dispatch:
+    inputs:
+      part:
+        description: "Which part to export — run them in this order"
+        required: true
+        type: choice
+        default: dictionary
+        options: [dictionary, records, notes, tasks, meetings, calls, emails, communications, files]
+      from_date:
+        description: "Optional — only records created from this date, YYYY-MM-DD (use to split emails and calls by year)"
+        required: false
+        default: ""
+        type: string
+      to_date:
+        description: "Optional — up to and including this date, YYYY-MM-DD"
+        required: false
+        default: ""
+        type: string
+      test_limit:
+        description: "0 = everything. 200 = just the first 200 of each, to check the files first"
+        required: true
+        default: "0"
+        type: string
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm install --no-audit --no-fund
+      - name: Check the export still works
+        run: node selftest.js
+      - run: node --max-old-space-size=6144 export.js
+        env:
+          HUBSPOT_TOKEN: ${{ secrets.HUBSPOT_TOKEN }}
+          PART: ${{ inputs.part }}
+          FROM_DATE: ${{ inputs.from_date }}
+          TO_DATE: ${{ inputs.to_date }}
+          TEST_LIMIT: ${{ inputs.test_limit }}
+      # this is client data: kept for the shortest time GitHub allows
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hubspot-export-${{ inputs.part }}${{ inputs.from_date && format('-{0}', inputs.from_date) || '' }}
+          path: out/
+          retention-days: 1
+          if-no-files-found: ignore

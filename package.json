@@ -1,0 +1,10 @@
+{
+  "name": "hof-hubspot-export",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Exports everything in HubSpot to Excel, in layers, ready to import into a new CRM.",
+  "type": "commonjs",
+  "engines": { "node": ">=18" },
+  "dependencies": { "exceljs": "^4.4.0" },
+  "scripts": { "start": "node export.js", "test": "node selftest.js" }
+}
